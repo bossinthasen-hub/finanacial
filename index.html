@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบวางแผนและจัดการเงินสุทธิประจำเดือน - K-Blue Banking Style</title>
+    
+    <!-- Google Fonts: Prompt -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Prompt', 'sans-serif'],
+                    },
+                    colors: {
+                        bank: {
+                            green: '#059669',
+                            emerald: '#10b981',
+                            blue: '#0284c7',
+                            cyan: '#06b6d4',
+                            darkBlue: '#0f172a',
+                            lightBg: '#f0fdf4',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+            background: linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 50%, #f8fafc 100%);
+            min-height: 100vh;
+        }
+
+        /* Glassmorphism card effect */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+        }
+
+        /* Bank Virtual Card Gradient */
+        .bank-card-gradient {
+            background: linear-gradient(135deg, #059669 0%, #0284c7 100%);
+        }
+
+        /* Input styling */
+        .input-bank {
+            transition: all 0.2s ease-in-out;
+        }
+        .input-bank:focus {
+            box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.2);
+            border-color: #059669;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="text-slate-800 pb-12 antialiased">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-white/80 backdrop-filter blur-md border-b border-emerald-100 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-sky-500 flex items-center justify-center text-white shadow-md shadow-emerald-600/20">
+                    <i data-lucide="wallet" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight text-slate-800">FinBalance Smart</h1>
+                    <p class="text-xs text-emerald-600 font-medium">ระบบคำนวณรายรับ-รายจ่ายสุทธิ</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full border border-emerald-200/60 text-xs font-medium">
+                <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+                <span id="currentMonthYear">ประจำเดือน...</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 pt-6 space-y-6">
+
+        <!-- Top Summary Section: Bank Account Card & Key Metrics -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Virtual Debit Card Display -->
+            <div class="lg:col-span-1 rounded-3xl bank-card-gradient p-6 text-white shadow-xl shadow-emerald-900/10 relative overflow-hidden flex flex-col justify-between min-h-[220px]">
+                <!-- Decorative Circles background -->
+                <div class="absolute -right-10 -bottom-10 w-40 h-40 rounded-full bg-white/10 blur-xl pointer-events-none"></div>
+                <div class="absolute -left-10 -top-10 w-32 h-32 rounded-full bg-sky-300/20 blur-lg pointer-events-none"></div>
+
+                <div>
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="text-xs uppercase tracking-wider text-emerald-100 font-medium">ยอดเงินคงเหลือสุทธิ</span>
+                            <h2 class="text-3xl font-extrabold mt-1 tracking-tight" id="netBalanceDisplay">฿0.00</h2>
+                        </div>
+                        <div class="bg-white/20 backdrop-blur-md px-2.5 py-1 rounded-lg text-xs font-semibold">
+                            NET SALARY
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-3 pt-4 border-t border-white/15">
+                    <div class="flex justify-between text-xs text-emerald-50">
+                        <span>รายได้ทั้งหมด:</span>
+                        <span class="font-semibold text-white" id="totalIncomeDisplay">฿0.00</span>
+                    </div>
+                    <div class="flex justify-between text-xs text-emerald-50">
+                        <span>ค่าใช้จ่ายหักรวม:</span>
+                        <span class="font-semibold text-rose-200" id="totalExpenseDisplay">฿0.00</span>
+                    </div>
+                    <div class="flex justify-between text-xs text-emerald-50">
+                        <span>ใช้จ่ายได้เฉลี่ยต่อวัน (30 วัน):</span>
+                        <span class="font-semibold text-sky-200" id="dailyBudgetDisplay">฿0.00 / วัน</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Primary Inputs Card -->
+            <div class="lg:col-span-2 glass-card rounded-3xl p-6 shadow-md shadow-slate-200/50 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="sliders" class="w-5 h-5 text-emerald-600"></i>
+                            <h3 class="font-bold text-slate-800">กรอกข้อมูลรายได้และค่าใช้จ่ายผันแปร</h3>
+                        </div>
+                        <span class="text-xs text-slate-400 font-normal">*อัปเดตคำนวณทันที</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Salary Input -->
+                        <div class="space-y-1.5">
+                            <label for="salaryInput" class="block text-xs font-semibold text-slate-600 flex items-center gap-1.5">
+                                <i data-lucide="circle-dollar-sign" class="w-4 h-4 text-emerald-500"></i>
+                                เงินเดือนสุทธิ (บาท)
+                            </label>
+                            <div class="relative">
+                                <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-semibold">฿</span>
+                                <input type="number" id="salaryInput" placeholder="กรอกเงินเดือนของคุณ"
+                                    class="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 input-bank text-slate-800 font-semibold focus:outline-none focus:bg-white text-base"
+                                    step="any">
+                            </div>
+                        </div>
+
+                        <!-- Shopee Input (Variable) -->
+                        <div class="space-y-1.5">
+                            <label for="shopeeInput" class="block text-xs font-semibold text-slate-600 flex items-center justify-between">
+                                <span class="flex items-center gap-1.5">
+                                    <i data-lucide="shopping-bag" class="w-4 h-4 text-orange-500"></i>
+                                    ค่า Shopee ประจำเดือน
+                                </span>
+                                <span class="text-[10px] px-2 py-0.5 rounded bg-orange-100 text-orange-600 font-medium">กรอกใหม่ทุกเดือน</span>
+                            </label>
+                            <div class="relative">
+                                <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-semibold">฿</span>
+                                <input type="number" id="shopeeInput" placeholder="0.00" value="0"
+                                    class="w-full pl-9 pr-4 py-2.5 rounded-xl border border-orange-200 bg-orange-50/20 input-bank text-slate-800 font-semibold focus:outline-none focus:bg-white text-base"
+                                    step="any">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Info callout -->
+                <div class="mt-4 p-3 rounded-xl bg-sky-50 border border-sky-100 flex items-start gap-2 text-xs text-sky-800">
+                    <i data-lucide="info" class="w-4 h-4 text-sky-600 shrink-0 mt-0.5"></i>
+                    <span>ระบบได้ใส่รายการค่าใช้จ่ายประจำทั้ง 9 รายการไว้ให้อัตโนมัติแล้ว คุณสามารถเปิด/ปิด หรือปรับแก้ไขจำนวนเงินย่อยได้ด้านล่าง</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Fixed & Dynamic Expenses List Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- Expenses Checklist (2 Columns wide) -->
+            <div class="lg:col-span-2 glass-card rounded-3xl p-6 shadow-md shadow-slate-200/50">
+                <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+                    <div>
+                        <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                            <i data-lucide="receipt" class="w-5 h-5 text-emerald-600"></i>
+                            รายการหักค่าใช้จ่ายประจำเดือน
+                        </h3>
+                        <p class="text-xs text-slate-500">เลือกเปิด/ปิด หรือแก้ไขยอดเงินเพื่อคำนวณได้อย่างยืดหยุ่น</p>
+                    </div>
+                    
+                    <button id="addCustomExpenseBtn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium transition shadow-sm">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                        เพิ่มรายการ
+                    </button>
+                </div>
+
+                <!-- Expense Items Grid/List -->
+                <div id="expenseListContainer" class="space-y-2.5 max-h-[460px] overflow-y-auto pr-1">
+                    <!-- Dynamic rendering via JS -->
+                </div>
+
+                <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                    <span>* รวมค่าใช้จ่ายทั้งหมดจะถูกหักออกจากเงินเดือนโดยอัตโนมัติ</span>
+                    <button id="resetDefaultsBtn" class="text-slate-400 hover:text-rose-500 underline text-xs transition">
+                        คืนค่าเริ่มต้นทั้งหมด
+                    </button>
+                </div>
+            </div>
+
+            <!-- Expense Chart & Analytics (1 Column wide) -->
+            <div class="lg:col-span-1 glass-card rounded-3xl p-6 shadow-md shadow-slate-200/50 flex flex-col justify-between">
+                <div>
+                    <h3 class="font-bold text-slate-800 pb-3 mb-2 border-b border-slate-100 flex items-center gap-2">
+                        <i data-lucide="pie-chart" class="w-5 h-5 text-sky-600"></i>
+                        สัดส่วนรายจ่าย
+                    </h3>
+
+                    <!-- Chart Container -->
+                    <div class="relative w-full h-52 flex items-center justify-center my-2">
+                        <canvas id="expenseChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Quick Stats summary boxes -->
+                <div class="space-y-2 pt-3 border-t border-slate-100">
+                    <div class="flex items-center justify-between text-xs p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-100">
+                        <span class="text-emerald-800 font-medium">ออม & ให้แม่ (% จากเงินเดือน):</span>
+                        <span id="savingsRatioText" class="font-bold text-emerald-700">0%</span>
+                    </div>
+                    <div class="flex items-center justify-between text-xs p-2.5 rounded-xl bg-slate-50 border border-slate-200/60">
+                        <span class="text-slate-600 font-medium">สัดส่วนค่าใช้จ่ายทั้งหมด:</span>
+                        <span id="expenseRatioText" class="font-bold text-slate-700">0%</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Modal: Add New Custom Expense -->
+    <div id="addExpenseModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
+        <div class="bg-white rounded-3xl p-6 w-full max-w-md mx-4 shadow-2xl border border-slate-100 transform scale-95 transition-transform duration-200" id="modalCard">
+            <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+                <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="w-5 h-5 text-emerald-600"></i>
+                    เพิ่มรายการค่าใช้จ่ายใหม่
+                </h3>
+                <button id="closeModalBtn" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form id="addExpenseForm" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">ชื่อรายการ</label>
+                    <input type="text" id="newExpenseName" placeholder="เช่น ค่าประกันชีวิต, ค่าคอนโด" required
+                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 input-bank text-sm focus:outline-none focus:bg-white">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">จำนวนเงิน (บาท)</label>
+                    <input type="number" id="newExpenseAmount" placeholder="0.00" step="any" required
+                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 input-bank text-sm focus:outline-none focus:bg-white">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">ไอคอนประจำรายการ</label>
+                    <select id="newExpenseIcon" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 input-bank text-sm focus:outline-none focus:bg-white">
+                        <option value="tag">🏷️ แท็กทั่วไป</option>
+                        <option value="home">🏠 บ้าน / คอนโด</option>
+                        <option value="car">🚗 เดินทาง / รถยนต์</option>
+                        <option value="credit-card">💳 ชำระหนี้ / บัตรเครดิต</option>
+                        <option value="heart">❤️ ครอบครัว / บริจาค</option>
+                        <option value="film">🎬 บันเทิง / ท่องเที่ยว</option>
+                        <option value="shopping-cart">🛒 ช้อปปิ้ง</option>
+                    </select>
+                </div>
+
+                <div class="pt-2 flex gap-3">
+                    <button type="button" id="cancelModalBtn" class="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 transition">
+                        ยกเลิก
+                    </button>
+                    <button type="submit" class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium shadow-md shadow-emerald-600/20 transition">
+                        บันทึกรายการ
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notification Toast Container -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-800 text-white px-4 py-3 rounded-2xl shadow-xl text-xs font-medium flex items-center gap-2 translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
+        <span id="toastMessage">บันทึกข้อมูลเรียบร้อย</span>
+    </div>
+
+    <script>
+        // --- Default Fixed Expenses Configuration ---
+        const DEFAULT_EXPENSES = [
+            { id: 'gas', name: 'ค่าน้ำมัน', amount: 500, icon: 'fuel', category: 'travel', enabled: true, isFixed: true },
+            { id: 'mookata', name: 'ค่าหมูกระทะ', amount: 2000, icon: 'utensils', category: 'food', enabled: true, isFixed: true },
+            { id: 'phone', name: 'ค่าโทรศัพท์', amount: 898.30, icon: 'smartphone', category: 'utility', enabled: true, isFixed: true },
+            { id: 'subscribe', name: 'ค่า Subscribe', amount: 857, icon: 'tv', category: 'utility', enabled: true, isFixed: true },
+            { id: 'lottery', name: 'ค่าหวย', amount: 500, icon: 'ticket', category: 'entertainment', enabled: true, isFixed: true },
+            { id: 'car', name: 'ค่าผ่อนรถ', amount: 3000, icon: 'car', category: 'installment', enabled: true, isFixed: true },
+            { id: 'mom', name: 'ให้แม่', amount: 3500, icon: 'heart', category: 'family', enabled: true, isFixed: true },
+            { id: 'savings', name: 'เงินเก็บ', amount: 3000, icon: 'piggy-bank', category: 'savings', enabled: true, isFixed: true },
+            { id: 'travel', name: 'ไปเที่ยว', amount: 2500, icon: 'palmtree', category: 'entertainment', enabled: true, isFixed: true }
+        ];
+
+        // --- App State ---
+        let salary = 0;
+        let shopeeAmount = 0;
+        let expensesList = [];
+        let chartInstance = null;
+
+        // --- DOM Elements ---
+        const salaryInput = document.getElementById('salaryInput');
+        const shopeeInput = document.getElementById('shopeeInput');
+        const expenseListContainer = document.getElementById('expenseListContainer');
+        const netBalanceDisplay = document.getElementById('netBalanceDisplay');
+        const totalIncomeDisplay = document.getElementById('totalIncomeDisplay');
+        const totalExpenseDisplay = document.getElementById('totalExpenseDisplay');
+        const dailyBudgetDisplay = document.getElementById('dailyBudgetDisplay');
+        const currentMonthYear = document.getElementById('currentMonthYear');
+        const savingsRatioText = document.getElementById('savingsRatioText');
+        const expenseRatioText = document.getElementById('expenseRatioText');
+
+        // Modal Elements
+        const addExpenseModal = document.getElementById('addExpenseModal');
+        const modalCard = document.getElementById('modalCard');
+        const addCustomExpenseBtn = document.getElementById('addCustomExpenseBtn');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const cancelModalBtn = document.getElementById('cancelModalBtn');
+        const addExpenseForm = document.getElementById('addExpenseForm');
+        const resetDefaultsBtn = document.getElementById('resetDefaultsBtn');
+
+        // --- Initialize Application ---
+        document.addEventListener('DOMContentLoaded', () => {
+            setCurrentMonthText();
+            loadStateFromStorage();
+            renderExpenseList();
+            initChart();
+            calculateFinances();
+            
+            // Re-render Lucide icons
+            lucide.createIcons();
+            
+            // Setup Event Listeners
+            salaryInput.addEventListener('input', handleSalaryChange);
+            shopeeInput.addEventListener('input', handleShopeeChange);
+            
+            addCustomExpenseBtn.addEventListener('click', openModal);
+            closeModalBtn.addEventListener('click', closeModal);
+            cancelModalBtn.addEventListener('click', closeModal);
+            addExpenseForm.addEventListener('submit', handleAddCustomExpense);
+            resetDefaultsBtn.addEventListener('click', resetToDefaults);
+        });
+
+        // Set Thai Month & Year
+        function setCurrentMonthText() {
+            const thaiMonths = [
+                "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+                "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+            ];
+            const now = new Date();
+            const month = thaiMonths[now.getMonth()];
+            const year = now.getFullYear() + 543;
+            currentMonthYear.innerText = `${month} ${year}`;
+        }
+
+        // --- LocalStorage Logic ---
+        function loadStateFromStorage() {
+            const savedSalary = localStorage.getItem('fin_salary');
+            const savedShopee = localStorage.getItem('fin_shopee');
+            const savedExpenses = localStorage.getItem('fin_expenses');
+
+            if (savedSalary !== null) salary = parseFloat(savedSalary) || 0;
+            if (savedShopee !== null) shopeeAmount = parseFloat(savedShopee) || 0;
+
+            salaryInput.value = salary ? salary : '';
+            shopeeInput.value = shopeeAmount ? shopeeAmount : '';
+
+            if (savedExpenses) {
+                try {
+                    expensesList = JSON.parse(savedExpenses);
+                } catch (e) {
+                    expensesList = [...DEFAULT_EXPENSES];
+                }
+            } else {
+                expensesList = [...DEFAULT_EXPENSES];
+            }
+        }
+
+        function saveStateToStorage() {
+            localStorage.setItem('fin_salary', salary);
+            localStorage.setItem('fin_shopee', shopeeAmount);
+            localStorage.setItem('fin_expenses', JSON.stringify(expensesList));
+        }
+
+        // --- Handlers ---
+        function handleSalaryChange(e) {
+            salary = parseFloat(e.target.value) || 0;
+            saveStateToStorage();
+            calculateFinances();
+        }
+
+        function handleShopeeChange(e) {
+            shopeeAmount = parseFloat(e.target.value) || 0;
+            saveStateToStorage();
+            calculateFinances();
+        }
+
+        function toggleExpenseEnable(id) {
+            const item = expensesList.find(x => x.id === id);
+            if (item) {
+                item.enabled = !item.enabled;
+                saveStateToStorage();
+                renderExpenseList();
+                calculateFinances();
+            }
+        }
+
+        function updateExpenseAmount(id, newAmount) {
+            const item = expensesList.find(x => x.id === id);
+            if (item) {
+                item.amount = parseFloat(newAmount) || 0;
+                saveStateToStorage();
+                calculateFinances();
+            }
+        }
+
+        function deleteExpense(id) {
+            expensesList = expensesList.filter(x => x.id !== id);
+            saveStateToStorage();
+            renderExpenseList();
+            calculateFinances();
+            showToast('ลบรายการเรียบร้อยแล้ว');
+        }
+
+        function resetToDefaults() {
+            expensesList = JSON.parse(JSON.stringify(DEFAULT_EXPENSES));
+            saveStateToStorage();
+            renderExpenseList();
+            calculateFinances();
+            showToast('คืนค่ารายการเริ่มต้นเรียบร้อยแล้ว');
+        }
+
+        // --- Render Functions ---
+        function renderExpenseList() {
+            expenseListContainer.innerHTML = '';
+
+            expensesList.forEach(item => {
+                const isChecked = item.enabled;
+                const row = document.createElement('div');
+                row.className = `flex items-center justify-between p-3 rounded-2xl border transition-all ${
+                    isChecked ? 'bg-white/80 border-slate-200/80 shadow-sm' : 'bg-slate-100/60 border-slate-200/40 opacity-50'
+                }`;
+
+                row.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <input type="checkbox" ${isChecked ? 'checked' : ''} 
+                            onchange="toggleExpenseEnable('${item.id}')"
+                            class="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer">
+                        
+                        <div class="w-8 h-8 rounded-xl ${isChecked ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-200 text-slate-500'} flex items-center justify-center shrink-0">
+                            <i data-lucide="${item.icon || 'tag'}" class="w-4 h-4"></i>
+                        </div>
+
+                        <div>
+                            <span class="font-medium text-xs md:text-sm text-slate-800">${item.name}</span>
+                            ${item.isFixed ? '<span class="ml-1.5 text-[10px] px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-600 border border-emerald-100 font-normal">ประจำ</span>' : '<span class="ml-1.5 text-[10px] px-1.5 py-0.2 rounded bg-sky-50 text-sky-600 border border-sky-100 font-normal">กำหนดเอง</span>'}
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <div class="relative w-28 md:w-32">
+                            <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-medium">฿</span>
+                            <input type="number" step="any" value="${item.amount}" 
+                                onchange="updateExpenseAmount('${item.id}', this.value)"
+                                ${!isChecked ? 'disabled' : ''}
+                                class="w-full pl-6 pr-2 py-1 text-xs md:text-sm text-right font-semibold text-slate-700 bg-slate-50/80 border border-slate-200 rounded-lg focus:outline-none focus:bg-white focus:border-emerald-500">
+                        </div>
+
+                        ${!item.isFixed ? `
+                            <button onclick="deleteExpense('${item.id}')" class="p-1 text-slate-400 hover:text-rose-500 transition rounded-lg">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        ` : '<div class="w-6"></div>'}
+                    </div>
+                `;
+
+                expenseListContainer.appendChild(row);
+            });
+
+            // Re-initialize icons for newly added rows
+            lucide.createIcons();
+        }
+
+        // --- Core Calculation Logic ---
+        function calculateFinances() {
+            // Calculate total active fixed/custom expenses
+            const activeExpensesTotal = expensesList
+                .filter(item => item.enabled)
+                .reduce((sum, item) => sum + item.amount, 0);
+
+            // Total expense includes Shopee
+            const totalExpense = activeExpensesTotal + shopeeAmount;
+            const netBalance = salary - totalExpense;
+            const dailyBudget = netBalance > 0 ? (netBalance / 30) : 0;
+
+            // Render Values with currency formatting
+            totalIncomeDisplay.innerText = formatCurrency(salary);
+            totalExpenseDisplay.innerText = formatCurrency(totalExpense);
+            netBalanceDisplay.innerText = formatCurrency(netBalance);
+            dailyBudgetDisplay.innerText = `${formatCurrency(dailyBudget)} / วัน`;
+
+            // Style Net Balance color depending on status
+            if (netBalance < 0) {
+                netBalanceDisplay.className = "text-3xl font-extrabold mt-1 tracking-tight text-rose-300 animate-pulse";
+            } else {
+                netBalanceDisplay.className = "text-3xl font-extrabold mt-1 tracking-tight text-white";
+            }
+
+            // Calculate ratios
+            if (salary > 0) {
+                // Find savings + mother amount
+                const savingsItem = expensesList.find(x => x.id === 'savings' && x.enabled);
+                const momItem = expensesList.find(x => x.id === 'mom' && x.enabled);
+                const savingsVal = (savingsItem ? savingsItem.amount : 0) + (momItem ? momItem.amount : 0);
+                
+                const savingsRatio = ((savingsVal / salary) * 100).toFixed(1);
+                const expenseRatio = ((totalExpense / salary) * 100).toFixed(1);
+
+                savingsRatioText.innerText = `${savingsRatio}%`;
+                expenseRatioText.innerText = `${expenseRatio}%`;
+            } else {
+                savingsRatioText.innerText = '0%';
+                expenseRatioText.innerText = '0%';
+            }
+
+            // Update Chart Data
+            updateChart(activeExpensesTotal, shopeeAmount, netBalance);
+        }
+
+        function formatCurrency(amount) {
+            return '฿' + (amount || 0).toLocaleString('th-TH', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        // --- Chart.js Setup ---
+        function initChart() {
+            const ctx = document.getElementById('expenseChart').getContext('2d');
+            chartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['ค่าใช้จ่ายประจำ', 'ค่า Shopee', 'เงินคงเหลือสุทธิ'],
+                    datasets: [{
+                        data: [0, 0, 0],
+                        backgroundColor: [
+                            '#0284c7', // Sky Blue for fixed expenses
+                            '#f97316', // Orange for Shopee
+                            '#059669'  // Emerald Green for Net balance
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: {
+                                    family: 'Prompt',
+                                    size: 11
+                                },
+                                padding: 12,
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.raw || 0;
+                                    return ` ${context.label}: ฿${value.toLocaleString('th-TH', {minimumFractionDigits: 2})}`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+        }
+
+        function updateChart(fixedTotal, shopeeVal, netVal) {
+            if (!chartInstance) return;
+
+            const safeNet = netVal > 0 ? netVal : 0;
+            chartInstance.data.datasets[0].data = [fixedTotal, shopeeVal, safeNet];
+            chartInstance.update();
+        }
+
+        // --- Modal Control Functions ---
+        function openModal() {
+            addExpenseModal.classList.remove('hidden');
+            setTimeout(() => {
+                addExpenseModal.classList.remove('opacity-0');
+                modalCard.classList.remove('scale-95');
+                modalCard.classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeModal() {
+            addExpenseModal.classList.add('opacity-0');
+            modalCard.classList.remove('scale-100');
+            modalCard.classList.add('scale-95');
+            setTimeout(() => {
+                addExpenseModal.classList.add('hidden');
+                addExpenseForm.reset();
+            }, 200);
+        }
+
+        function handleAddCustomExpense(e) {
+            e.preventDefault();
+            const name = document.getElementById('newExpenseName').value.trim();
+            const amount = parseFloat(document.getElementById('newExpenseAmount').value) || 0;
+            const icon = document.getElementById('newExpenseIcon').value;
+
+            if (!name || amount <= 0) return;
+
+            const newExpense = {
+                id: 'custom_' + Date.now(),
+                name: name,
+                amount: amount,
+                icon: icon,
+                category: 'custom',
+                enabled: true,
+                isFixed: false
+            };
+
+            expensesList.push(newExpense);
+            saveStateToStorage();
+            renderExpenseList();
+            calculateFinances();
+            closeModal();
+            showToast(`เพิ่มรายการ "${name}" เรียบร้อยแล้ว`);
+        }
+
+        // --- Toast Notification ---
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            toastMessage.innerText = msg;
+            
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 2500);
+        }
+    </script>
+</body>
+</html>
